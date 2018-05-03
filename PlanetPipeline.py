@@ -52,6 +52,7 @@ class PlanetPipeline:
                resolution_threshold,
                item_types = DEFAULT_ITEM_TYPE,
                print_field = None, print_lim = 10):
+
         query = self.make_filters(date_after = date_after,
                                   date_before = date_before,
                                   geojson_file = geojson_file,
@@ -120,7 +121,7 @@ class PlanetPipeline:
                 break
             time.sleep(60)
             counter += 1
-            print("Percent Complete: {}".format(counter/num_tries))
+            print("Percent of allocated attempts used: {}".format(counter/num_tries))
         print("Completed attempt")
 
     def make_filters(self, date_after, date_before, geojson_file, 
