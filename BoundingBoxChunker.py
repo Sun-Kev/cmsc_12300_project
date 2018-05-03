@@ -27,7 +27,7 @@ class GeoJSONBoundBox:
         self.geojson_root = re.findall(r'(\S+).geojson', str(geojson_file))[0]
         #print(self.geojson_root)
 
-        with open(GEOJSON_DIRECTORY + "/" + geojson_file) as f:
+        with open(GEOJSON_DIRECTORY + geojson_file) as f:
              self.geojson = json.load(f)
         if self.geojson['type'] == 'FeatureCollection':
             self.coords = list(self._flatten([f['geometry']['coordinates']

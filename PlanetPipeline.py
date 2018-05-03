@@ -14,6 +14,9 @@ from settings import DEFAULT_ITEM_TYPE
 from settings import GEOJSON_DIRECTORY
 from settings import ACTIVATION_REQUEST
 from settings import ASSET_TYPE
+from settings import NUM_TRIES
+from settings import OUTPUT_DIR
+from settings import CHUNK_DIR
 
 class PlanetPipeline:
 # This is the planet pipeline
@@ -36,7 +39,7 @@ class PlanetPipeline:
     def search_all(self, **kwargs):
         print("Searching all results...")
         for i in os.listdir(self.geojson_dir):
-            with open(self.geojson_dir + "/" + i) as f:
+            with open(self.geojson_dir + i) as f:
                 try:
                     geojson_content = json.load(f)['features'][0]['geometry']
                 except:
@@ -58,8 +61,6 @@ class PlanetPipeline:
         request = api.filters.build_search_request(query, item_types)
         # this will cause an exception if there are any API related errors
         results = self.client.quick_search(request, sort = "acquired asc")
-
-        desired_item_type = "PSScene3Band"
         
         for item in results.items_iter(15):
             try:
@@ -75,12 +76,10 @@ class PlanetPipeline:
             except:
                 pass
 
-    def fetch_asset(self, item_id):
+    def fetch_asset(self, item_id, output_dir):
         print("Fetching Asset {}".format(item_id))
 
-
-        desired_item_type = "PSScene3Band"
-        item_url = 'https://api.planet.com/data/v1/item-types/{}/items/{}/assets'.format(desired_item_type, item_id)
+        item_url = 'https://api.planet.com/data/v1/item-types/{}/items/{}/assets'.format(DESIRED_ITEM_TYPE, item_id)
 
         # Request a new download URL
         result = requests.get(item_url, auth=HTTPBasicAuth(os.environ['PL_API_KEY'], ''))
@@ -93,8 +92,8 @@ class PlanetPipeline:
             download_url = result.json()[ASSET_TYPE]['location']
             vsicurl_url = '/vsicurl/' + download_url
             geom_id = str(self.search_results[item_id]).split(".")[0]
-            output_file = "image_" + geom_id + "_" + item_id +  '_subarea.tif'
-            geojson_file = self.geojson_dir + "/" + self.search_results[item_id]
+            output_file = output_dir + geom_id + "_" + item_id +  '_subarea.tif'
+            geojson_file = self.geojson_dir + self.search_results[item_id]
 
             # get the image clipped to our geojson file size
             gdal.Warp(output_file, vsicurl_url, dstSRS = 'EPSG:4326',
@@ -105,14 +104,15 @@ class PlanetPipeline:
         except Exception as e:
             print("Something went wrong", e)
 
-    def fetch_all(self):
+    def fetch_all(self, output_dir=None):
+        if output_dir == None:
+            output_dir = OUTPUT_DIR
         fetch_list = [(i,j) for i, j in self.search_results.items()]
-        num_tries = 15
         counter = 0
-        while counter < num_tries:
+        while counter < NUM_TRIES:
             for i, j in fetch_list:
                 print("Looking for assets: {} \n".format(fetch_list))
-                result = self.fetch_asset(i)
+                result = self.fetch_asset(i, output_dir)
                 if result:
                     print("Bingo! Got one: {}".format(i))
                     fetch_list.remove((i,j))
@@ -144,6 +144,7 @@ class PlanetPipeline:
         return query
     
 if __name__ == "__main__":
+
     p = PlanetPipeline(geojson_directory = CHUNK_DIR)
     date_list = [("2017-08-01", "2017-08-30"),
                  ("2017-09-01", "2017-09-30"),
@@ -153,4 +154,7 @@ if __name__ == "__main__":
         p.search_all(date_after = i, date_before = j,
                  print_field = 'id', cloud_threshold = 0.9,
                  resolution_threshold = 3)
+
+    os.makedirs(OUTPUT_DIR)
+
     p.fetch_all()
