@@ -25,7 +25,6 @@ class GeoJSONBoundBox:
     def __init__(self, geojson_file):
 
         self.geojson_root = re.findall(r'(\S+).geojson', str(geojson_file))[0]
-        #print(self.geojson_root)
 
         with open(GEOJSON_DIRECTORY + geojson_file) as f:
              self.geojson = json.load(f)
