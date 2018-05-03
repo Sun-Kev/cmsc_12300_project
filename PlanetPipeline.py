@@ -17,6 +17,7 @@ from settings import ASSET_TYPE
 from settings import NUM_TRIES
 from settings import OUTPUT_DIR
 from settings import CHUNK_DIR
+from settings import DESIRED_ITEM_TYPE
 
 class PlanetPipeline:
 # This is the planet pipeline
@@ -50,6 +51,8 @@ class PlanetPipeline:
                     continue
                 result = self.search(geojson_file = geojson_content, **kwargs)
                 if result:
+                    with open("successfuL_searches.csv", "w") as s:
+                        s.write(",".join([result, i]))
                     self.search_results[result] = i
                     successes += 1
                     print("Successful search % thus far:", successes/tally)
@@ -111,10 +114,11 @@ class PlanetPipeline:
         except Exception as e:
             print("Something went wrong", e)
 
-    def fetch_all(self, output_dir=None):
+    def fetch_all(self, fetch_list = None, output_dir=None):
+        if fetch_list == None:
+            feth_list = [(i,j) for i, j in self.search_results.items()]
         if output_dir == None:
             output_dir = OUTPUT_DIR
-        fetch_list = [(i,j) for i, j in self.search_results.items()]
         counter = 0
         while counter < NUM_TRIES:
             for i, j in fetch_list:
@@ -153,7 +157,7 @@ if __name__ == "__main__":
 
     p = PlanetPipeline(geojson_directory = CHUNK_DIR)
     date_list = [("2017-08-01", "2017-08-30"),
-                 ("2017-09-01", "2017-09-30"),
+                 #("2017-09-01", "2017-09-30"),
                  ]
 
     for i, j in date_list:
