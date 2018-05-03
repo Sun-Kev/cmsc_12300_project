@@ -37,8 +37,12 @@ class PlanetPipeline:
         self.search_results = {}
 
     def search_all(self, **kwargs):
+        tally = 0
+        successes = 0
         print("Searching all results...")
         for i in os.listdir(self.geojson_dir):
+            tally += 1
+            print("Files searched so far:", tally)
             with open(self.geojson_dir + i) as f:
                 try:
                     geojson_content = json.load(f)['features'][0]['geometry']
@@ -47,6 +51,8 @@ class PlanetPipeline:
                 result = self.search(geojson_file = geojson_content, **kwargs)
                 if result:
                     self.search_results[result] = i
+                    successes += 1
+                    print("Successful search % thus far:", successes/tally)
 
     def search(self, geojson_file, date_after, date_before, cloud_threshold,
                resolution_threshold,
@@ -126,7 +132,6 @@ class PlanetPipeline:
 
     def make_filters(self, date_after, date_before, geojson_file, 
         cloud_threshold, resolution_threshold):
-        print("Making filters")
 
         resolution = api.filters.range_filter('gsd', lt = resolution_threshold)
 
