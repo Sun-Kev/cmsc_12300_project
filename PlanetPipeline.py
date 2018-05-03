@@ -9,15 +9,15 @@ import os
 import requests
 import time
 from subprocess import run
-from tkinter import filedialog
 
 from settings import DEFAULT_ITEM_TYPE
 from settings import GEOJSON_DIRECTORY
 from settings import ACTIVATION_REQUEST
+from settings import ASSET_TYPE
 
 class PlanetPipeline:
 # This is the planet pipeline
-# largely based on planet documentation
+# largely based on planet documenta tion
 # https://planetlabs.github.io/planet-client-python/api/examples.html
 
     def __init__(self, geojson_directory = None, default_item_type = None):
@@ -59,7 +59,6 @@ class PlanetPipeline:
         # this will cause an exception if there are any API related errors
         results = self.client.quick_search(request, sort = "acquired asc")
 
-        asset_type = 'analytic'
         desired_item_type = "PSScene3Band"
         
         for item in results.items_iter(15):
@@ -68,7 +67,7 @@ class PlanetPipeline:
                 item_type = item['properties']['item_type']
                 assets = self.client.get_assets(item).get()
                 for asset in sorted(assets.keys()):
-                    if asset == asset_type:
+                    if asset == ASSET_TYPE:
                         # request asset activation
                         activation_request = item_id.join(ACTIVATION_REQUEST)
                         response = run(activation_request, shell=True, check=True)
@@ -79,7 +78,6 @@ class PlanetPipeline:
     def fetch_asset(self, item_id):
         print("Fetching Asset {}".format(item_id))
 
-        asset_type = 'analytic'
 
         desired_item_type = "PSScene3Band"
         item_url = 'https://api.planet.com/data/v1/item-types/{}/items/{}/assets'.format(desired_item_type, item_id)
@@ -87,12 +85,12 @@ class PlanetPipeline:
         # Request a new download URL
         result = requests.get(item_url, auth=HTTPBasicAuth(os.environ['PL_API_KEY'], ''))
 
-        if result.json()[asset_type]['status'] != 'active':
+        if result.json()[ASSET_TYPE]['status'] != 'active':
             print("Asset {} is not yet active...".format(item_id))
             return False
         try:
             # assemble urls and file paths
-            download_url = result.json()[asset_type]['location']
+            download_url = result.json()[ASSET_TYPE]['location']
             vsicurl_url = '/vsicurl/' + download_url
             geom_id = str(self.search_results[item_id]).split(".")[0]
             output_file = "image_" + geom_id + "_" + item_id +  '_subarea.tif'
@@ -146,7 +144,7 @@ class PlanetPipeline:
         return query
     
 if __name__ == "__main__":
-    p = PlanetPipeline()
+    p = PlanetPipeline(geojson_directory = CHUNK_DIR)
     date_list = [("2017-08-01", "2017-08-30"),
                  ("2017-09-01", "2017-09-30"),
                  ]
