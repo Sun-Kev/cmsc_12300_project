@@ -5,6 +5,7 @@ import os
 import requests
 import sys
 from subprocess import run
+from settings import DEFAULT_ITEM_TYPE
 
 class PlanetDownloader:
 
@@ -16,17 +17,16 @@ class PlanetDownloader:
             for each_link in f.readline():
                 self.download_urls.append(each_id)
 
-        item_type = "PSScene4Band"
-        asset_type = "analytic"
+        item_type = DEFAULT_ITEM_TYPE[0]
         item_url = 'https://api.planet.com/data/v1/item-types/{}/items/{}/assets'.format(item_type, item_id)
         
-    def download(self):
-        os.makedirs("tmp_images")
+    def download(self, out_dir):
+        os.makedirs(out_dir)
 
         count = 0
         for i in download_urls:
             vsicurl_url = '/vsicurl/' + i
-            output_file = 'tmp_images/' + item_id +  '_subarea' + str(count) + '.tif'
+            output_file = out_dir + item_id +  '_subarea' + str(count) + '.tif'
             count += 1
 
             # GDAL Warp crops the image by our AOI, and saves it
@@ -35,11 +35,11 @@ class PlanetDownloader:
         
 
 if __name__ == "__main__":
-    input_file, merged_file, clip_file = sys.argv
+    input_file, merged_file, clip_file, out_dir = sys.argv
     d = PlanetDownloader(input_file, clip_file)
-    d.download()
+    d.download(out_dir)
     # merge files and then move the temporary directory
-    run("rio tmp_images/*.tif " + merged_file + ".tif")
-    run("mv tmp_images " + merged_file+"_imgs")
+    run("rio " + out_dir + "/*.tif " + merged_file + ".tif")
+    run("mv " + out_dir + merged_file+"_imgs")
 
     
